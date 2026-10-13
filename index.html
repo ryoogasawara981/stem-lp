@@ -1,0 +1,537 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>STEM Line Builder — ダンシングラインを設計するアプリ</title>
+<meta name="description" content="カービングの軌道を俯瞰図に起こして、ロングボードダンスのラインを設計するiOSアプリ。お手本との動きの照合もできます。">
+<meta name="theme-color" content="#0E1113">
+<link rel="canonical" href="https://ryoogasawara981.github.io/stem-lp/">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="STEM Line Builder">
+<meta property="og:description" content="カービングの軌道を図に起こしてダンシングラインを設計するアプリです。">
+<meta property="og:image" content="https://ryoogasawara981.github.io/stem-lp/hero-poster.jpg">
+<meta property="og:url" content="https://ryoogasawara981.github.io/stem-lp/">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap">
+
+<style>
+  /* Layout: 全面映像のヒーロー → 860pxの本文カラム。
+     見出しの色はヒールサイド(寒色)とトゥサイド(暖色)を交互に当てている。 */
+  :root {
+    --asphalt: #E7EAEC;
+    --surface: #FBFBFA;
+    --ink: #20262B;
+    --ink-2: #5C666E;
+    --ink-3: #8D979E;
+    --heel: #4E7C98;
+    --toe: #D45F33;
+    --rule: rgba(32,38,43,.14);
+    --shadow: 0 18px 44px rgba(32,56,72,.12);
+    color-scheme: light;
+    --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+    --jp: "Zen Kaku Gothic New", "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  img { max-width: 100%; }
+  body {
+    margin: 0; padding: 0;
+    background: var(--asphalt); color: var(--ink);
+    font-family: var(--jp); font-size: 14px; line-height: 1.85;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- ヒーロー（全面映像・常にダーク） ---------- */
+  .hero { position: relative; overflow: hidden; background: #0E1113; isolation: isolate; }
+  .hero-media { position: absolute; inset: 0; z-index: 0; }
+  .hero-media img, .hero-media video {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    object-fit: cover; object-position: 56% 72%;
+  }
+  .hero-media::after {
+    content: ""; position: absolute; inset: 0;
+    background:
+      linear-gradient(180deg, rgba(14,17,19,.88) 0%, rgba(14,17,19,.28) 20%, rgba(14,17,19,0) 38%),
+      linear-gradient(to top right, rgba(14,17,19,.94) 3%, rgba(14,17,19,.66) 26%, rgba(14,17,19,.22) 48%, rgba(14,17,19,0) 66%),
+      linear-gradient(180deg, rgba(14,17,19,0) 85%, rgba(14,17,19,.26) 92%, rgba(14,17,19,.70) 97%, #0E1113 100%);
+  }
+  .hero-mast {
+    position: relative; z-index: 2;
+    max-width: 860px; margin: 0 auto; width: 100%;
+    padding-inline: 20px; padding-top: clamp(26px, 5vw, 38px);
+    display: flex; align-items: baseline; gap: 11px; flex-wrap: wrap; color: #fff;
+  }
+  .hero-mast .wordmark { font-family: var(--display); font-weight: 700; font-size: 18px; letter-spacing: .3em; }
+  .hero-mast .sub { font-family: var(--display); font-size: 10px; font-weight: 600; letter-spacing: .26em; color: rgba(255,255,255,.62); text-transform: uppercase; }
+  .lang { margin-left: auto; display: flex; gap: 4px; align-self: center; }
+  .lang button {
+    font-family: var(--display); font-size: 10.5px; font-weight: 700; letter-spacing: .14em;
+    padding: 5px 11px; border-radius: 999px; cursor: pointer;
+    border: 1px solid rgba(255,255,255,.34); background: transparent; color: rgba(255,255,255,.72);
+  }
+  .lang button[aria-pressed="true"] { background: #fff; color: #14181B; border-color: #fff; }
+  .lang button:focus-visible { outline: 2px solid var(--toe); outline-offset: 2px; }
+
+  .hero-inner {
+    position: relative; z-index: 2;
+    max-width: 860px; margin: 0 auto; width: 100%;
+    padding-inline: 20px; padding-block: 0 clamp(50px, 9vw, 80px);
+    min-height: clamp(400px, 54vw, 540px);
+    display: flex; flex-direction: column;
+  }
+  .hero-copy { margin-top: auto; padding-top: 44px; color: #fff; }
+  .hero h1 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(32px, 8.6vw, 68px); line-height: 1.04; letter-spacing: -.02em;
+    margin: 0; text-wrap: balance;
+    text-shadow: 0 2px 28px rgba(0,0,0,.45);
+  }
+  .hero p {
+    margin: 14px 0 0; max-width: 26em;
+    font-size: 14px; color: rgba(255,255,255,.88);
+    text-shadow: 0 1px 14px rgba(0,0,0,.5);
+  }
+  .hero .store { margin-top: 24px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+  .hero .cta-note { font-size: 12px; color: rgba(255,255,255,.66); }
+
+  /* スマホでは映像を切り抜かず3:2のまま置く。cover のままだと縦長の枠に収めるため
+     左右が大きく切れ、右側の俯瞰図が画面外に出てしまう。
+     見出しは映像の下端に重ね、上下を黒へ落として文字を読ませる。 */
+  @media (max-width: 760px) {
+    .hero { display: flex; flex-direction: column; }
+    .hero-media { position: relative; inset: auto; width: 100%; aspect-ratio: 3 / 2; }
+    .hero-media img, .hero-media video { object-position: center; }
+    .hero-media::after {
+      background: linear-gradient(180deg,
+        #0E1113 0%, rgba(14,17,19,.48) 8%, rgba(14,17,19,0) 24%,
+        rgba(14,17,19,0) 84%, rgba(14,17,19,.34) 90%, rgba(14,17,19,.80) 96%, #0E1113 100%);
+    }
+    .hero-mast { order: -1; padding-block: 18px 12px; }
+    .hero-inner { min-height: 0; padding-block: 0 44px; margin-top: -8vw; }
+    .hero-copy { margin-top: 0; padding-top: 0; }
+  }
+
+  /* ヒーローの黒から本文の明るい地へ、帯を1本はさんで落とす */
+  .hero-fade {
+    height: clamp(190px, 42vw, 400px);
+    margin-bottom: -40px;
+    background: linear-gradient(180deg,
+      rgb(14,17,19) 0.0%,
+      rgb(16,19,21) 5.0%,
+      rgb(20,23,25) 10.0%,
+      rgb(27,30,32) 15.0%,
+      rgb(37,40,42) 20.0%,
+      rgb(48,51,53) 25.0%,
+      rgb(61,64,66) 30.0%,
+      rgb(75,78,80) 35.0%,
+      rgb(90,93,95) 40.0%,
+      rgb(106,109,111) 45.0%,
+      rgb(122,126,128) 50.0%,
+      rgb(139,142,144) 55.0%,
+      rgb(155,158,160) 60.0%,
+      rgb(170,173,175) 65.0%,
+      rgb(184,187,189) 70.0%,
+      rgb(197,200,202) 75.0%,
+      rgb(208,211,213) 80.0%,
+      rgb(218,221,223) 85.0%,
+      rgb(225,228,230) 90.0%,
+      rgb(229,232,234) 95.0%,
+      rgba(231,234,236,0) 100%);
+  }
+
+  .cta {
+    display: inline-flex; align-items: center; gap: 9px;
+    background: #fff; color: #14181B;
+    font-family: var(--jp); font-weight: 700; font-size: 14.5px;
+    padding: 13px 26px; border-radius: 999px; text-decoration: none;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  .cta:hover { transform: translateY(-1px); opacity: .9; }
+  .cta:focus-visible { outline: 2px solid var(--toe); outline-offset: 3px; }
+
+  /* ---------- 本文 ---------- */
+  /* グラデーションが終わったところから、1本のカービングが左端から入ってページの下まで走る。
+     地の色の1枚上・カードと文字の下に置くので、セクションの隙間と左右の余白にだけ現れる。
+     preserveAspectRatio="none" で高さに追従させ、線の太さだけ non-scaling-stroke で保つ。 */
+  .below { position: relative; }
+  .bgline {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    z-index: 0; pointer-events: none; display: block;
+  }
+  .bgline path { fill: none; stroke: var(--toe); stroke-width: 1.7; stroke-linecap: round; opacity: .62; }
+
+  .page { position: relative; z-index: 1; max-width: 860px; margin: 0 auto; padding-inline: 20px; padding-block: 0 72px; }
+  section { padding-block: 52px 0; }
+  .page > section:first-child { padding-top: 30px; }
+  h1, h2, h3 { text-wrap: balance; line-height: 1.4; }
+
+  .eyebrow {
+    font-family: var(--display); font-size: 11px; font-weight: 700;
+    letter-spacing: .22em; text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .eyebrow::before { content: ""; width: 22px; height: 2px; background: currentColor; flex: none; }
+  .eb-heel { color: var(--heel); }
+  .eb-toe { color: var(--toe); }
+
+  .sec-head { margin-bottom: 22px; }
+  .sec-head h2 { font-size: clamp(21px, 4.4vw, 26px); font-weight: 900; margin: 10px 0 0; }
+  .sec-head p { color: var(--ink-2); font-size: 14.5px; margin: 10px 0 0; max-width: 40em; }
+
+  .features { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 760px) { .features { grid-template-columns: 1fr; } }
+  .feature {
+    background: var(--surface); border-radius: 20px; padding: 24px 22px 26px;
+    box-shadow: var(--shadow); min-width: 0;
+    display: flex; flex-direction: column; gap: 14px;
+  }
+  .feature h2 { font-size: 20px; font-weight: 900; margin: 0; }
+  .feature > p { margin: 0; font-size: 14px; color: var(--ink-2); }
+  .shot {
+    margin: 0; border-radius: 14px; overflow: hidden;
+    border: 1px solid var(--rule); background: var(--asphalt); max-width: 100%;
+  }
+  .shot img, .shot video { width: 100%; height: auto; display: block; }
+  .flow { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 9px; }
+  .flow li { display: grid; grid-template-columns: 22px 1fr; gap: 10px; font-size: 13.5px; line-height: 1.7; }
+  .flow .n {
+    font-family: var(--display); font-size: 10.5px; font-weight: 700;
+    color: var(--ink-3); padding-top: 4px; font-variant-numeric: tabular-nums;
+  }
+  .fine { font-size: 13px; color: var(--ink-3); margin: 0; }
+
+  .terms { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+  @media (max-width: 680px) { .terms { grid-template-columns: 1fr; } }
+  .term { border-top: 2px solid var(--rule); padding-top: 12px; min-width: 0; }
+  .term dt { font-weight: 700; font-size: 14px; }
+  .term dd { margin: 5px 0 0; font-size: 13px; color: var(--ink-2); line-height: 1.75; }
+
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  @media (max-width: 680px) { .plans { grid-template-columns: 1fr; } }
+  .plan {
+    position: relative; background: var(--surface); border-radius: 16px;
+    padding: 20px 18px; box-shadow: var(--shadow); min-width: 0;
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .plan .pname { font-size: 13px; font-weight: 700; color: var(--ink-2); }
+  .plan .pprice { font-family: var(--display); font-weight: 700; font-size: 26px; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+  .plan .pprice small { font-family: var(--jp); font-size: 13px; font-weight: 500; color: var(--ink-3); letter-spacing: 0; }
+  .plan .pnote { font-size: 12.5px; color: var(--ink-3); margin-top: 4px; }
+  .plan.lead { outline: 2px solid var(--heel); }
+  .plan .tag {
+    position: absolute; top: -10px; left: 16px; background: var(--heel); color: #fff;
+    font-size: 11px; font-weight: 700; padding: 2px 10px; border-radius: 999px;
+  }
+  .gate { margin-top: 20px; border-top: 2px solid var(--rule); padding-top: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 680px) { .gate { grid-template-columns: 1fr; } }
+  .gate h3 { font-size: 13px; margin: 0 0 8px; font-weight: 700; }
+  .gate ul { margin: 0; padding-left: 1.15em; font-size: 13.5px; color: var(--ink-2); }
+  .gate li { margin-bottom: 3px; }
+
+  .faq { display: flex; flex-direction: column; gap: 2px; }
+  .faq details { background: var(--surface); border-radius: 12px; padding: 14px 18px; box-shadow: var(--shadow); }
+  .faq summary { font-weight: 700; font-size: 14.5px; cursor: pointer; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; font-family: var(--display); color: var(--ink-3); flex: none; }
+  .faq details[open] summary::after { content: "–"; }
+  .faq summary:focus-visible { outline: 2px solid var(--toe); outline-offset: 3px; border-radius: 4px; }
+  .faq p { margin: 10px 0 0; font-size: 13.5px; color: var(--ink-2); }
+
+  .bio { background: var(--surface); border-radius: 20px; padding: 24px 22px; box-shadow: var(--shadow); }
+  .bio h2 { font-size: 19px; font-weight: 900; margin: 10px 0 0; }
+  .bio p { font-size: 14px; color: var(--ink-2); margin: 12px 0 0; max-width: 42em; }
+  .bio-name { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; margin-top: 10px; }
+  .bio-name h2 { margin: 0; }
+  .bio-name img { height: 1.1em; width: auto; display: block; font-size: 19px; }
+
+  .closing { margin-top: 52px; background: var(--ink); border-radius: 22px; padding: 36px 26px; text-align: center; }
+  .closing h2 { font-size: clamp(20px, 4.6vw, 26px); font-weight: 900; margin: 0 0 20px; color: var(--asphalt); }
+  .closing .cta { background: var(--toe); color: #fff; }
+
+  footer {
+    margin-top: 34px; padding-top: 18px; border-top: 1px solid var(--rule);
+    font-size: 12px; color: var(--ink-3); display: flex; flex-wrap: wrap; gap: 6px 18px;
+  }
+  footer a { color: var(--ink-2); }
+
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-media">
+    <img class="poster" src="hero-poster.jpg" alt="">
+    <video src="hero.mp4" poster="hero-poster.jpg" autoplay muted loop playsinline aria-label="ロングボードで滑る映像の上に、STEMで設計したラインが重ねて描かれていく"></video>
+  </div>
+  <div class="hero-mast">
+    <span class="wordmark">STEM</span>
+    <span class="sub">Line Builder</span>
+    <div class="lang">
+      <button id="langJa" type="button" aria-pressed="true">JA</button>
+      <button id="langEn" type="button" aria-pressed="false">EN</button>
+    </div>
+  </div>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <h1>DESIGN<br>YOUR LINE.</h1>
+      <p data-en="An app that turns your carving into a top-down diagram so you can design your dancing line.">カービングの軌道を図に起こして​ダンシングラインを設計するアプリです。</p>
+      <div class="store">
+        <a class="cta" href="https://apps.apple.com/us/app/stem-line-builder-longboard/id6793957353" data-en="View on the App Store">App Store で見る</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="hero-fade" aria-hidden="true"></div>
+
+<div class="below">
+<svg class="bgline" viewBox="0 0 1000 3000" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+  <path vector-effect="non-scaling-stroke" d="M-60 38
+    C 148 88 302 118 432 208
+    C 604 328 694 428 602 540
+    C 520 640 382 658 352 742
+    C 324 822 420 864 470 930
+    C 522 996 500 1062 408 1120
+    C 316 1178 228 1254 268 1362
+    C 308 1470 562 1498 702 1598
+    C 842 1696 820 1828 686 1902
+    C 558 1972 430 1962 372 2032
+    C 314 2100 350 2180 420 2238
+    C 502 2304 560 2376 518 2472
+    C 478 2564 330 2600 262 2696
+    C 190 2796 238 2908 360 2968
+    C 432 3002 502 3016 548 3030" />
+</svg>
+
+<div class="page">
+
+  <section>
+    <div class="features">
+
+      <div class="feature">
+        <p class="eyebrow eb-heel">Line builder</p>
+        <h2 data-en="Design a line">ラインを設計する</h2>
+        <p data-en="The carving path becomes a top-down diagram, and you assign a step to each carve. Regular and goofy, heelside and toeside are detected automatically, and only the steps that can follow are offered.">カービングの軌道を俯瞰図にして、それぞれのカービングに​ステップを割り当てます。レギュラーとグーフィー、ヒールサイドとトゥサイドは自動で判定され、組み合わせられるステップだけを表示します。</p>
+        <figure class="shot"><video src="line-builder.mp4" poster="line-builder-poster.jpg" data-src-ja="line-builder.mp4" data-poster-ja="line-builder-poster.jpg" data-src-en="line-builder-en.mp4" data-poster-en="line-builder-en-poster.jpg" autoplay muted loop playsinline aria-label="ライン設計画面の操作。俯瞰図にステップが1つずつ置かれ、線が伸びていく。"></video></figure>
+        <ol class="flow">
+          <li><span class="n">01</span><span data-en="Pick a clip of your run and tap the skater">滑った動画を選んでスケーターをタップする</span></li>
+          <li><span class="n">02</span><span data-en="The detected path becomes a top-down diagram">検出された軌道が俯瞰図になる</span></li>
+          <li><span class="n">03</span><span data-en="Place a step on each carve">カーブごとにステップを置く</span></li>
+          <li><span class="n">04</span><span data-en="Go ride the line you designed">設計したラインを滑ってみる</span></li>
+          <li><span class="n">05</span><span data-en="Export the footage with the line drawn over it">撮影した動画にラインを重ねて書き出し</span></li>
+        </ol>
+        <p class="fine" data-en="No clip to hand? Draw the path with a finger, or just set the number of carves and start building.">動画がないときは、指で軌道を描くか、カービング数だけ決めて組み始められます。</p>
+      </div>
+
+      <div class="feature">
+        <p class="eyebrow eb-toe">Trick match</p>
+        <h2 data-en="Match your motion to a reference">お手本と動きを照合する</h2>
+        <p data-en="Pick a reference clip and one of your own. The app pulls the body and board motion out of each, then plays them side by side with the lines overlaid. Build and distance are normalised first, so you are comparing shape rather than impression.">お手本の動画と自分の動画を選ぶと、体と板の動きをそれぞれ抽出して、2画面を同時に再生しながら線を重ねます。体格と距離の差を消したうえで重ねるので、感覚ではなく形で差が見えます。</p>
+        <figure class="shot"><video src="trick-match.mp4" poster="trick-match-poster.jpg" data-src-ja="trick-match.mp4" data-poster-ja="trick-match-poster.jpg" data-src-en="trick-match-en.mp4" data-poster-en="trick-match-en-poster.jpg" autoplay muted loop playsinline aria-label="同期リプレイ画面。お手本と自分の動画が左右に並び、骨格と板の線を重ねて同時に再生される。"></video></figure>
+        <ol class="flow">
+          <li><span class="n">01</span><span data-en="Pick one reference clip and one of your own">お手本と自分の動画を1本ずつ選ぶ</span></li>
+          <li><span class="n">02</span><span data-en="AI extracts the body and board motion">体と板の動きをAIが抽出する</span></li>
+          <li><span class="n">03</span><span data-en="Play both at once and compare with the reference">2画面を同時再生してお手本と比較する</span></li>
+        </ol>
+        <p class="fine" data-en="Comparisons can be saved, so you can shoot the same trick again later and see what moved.">照合したセットは保存できるので、同じトリックを時間をおいて撮り直して比べられます。</p>
+      </div>
+
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow eb-heel">Vocabulary</p>
+      <h2 data-en="The words this app works in">このアプリが扱っている言葉</h2>
+      <p data-en="A step is written as the number and direction of its carves rather than as a trick name. That is what connects the diagram to the step.">ステップを「技の名前」ではなく「カービングの数と向き」で書き表します。これが図とステップをつなぐ共通言語になります。</p>
+    </div>
+    <dl class="terms">
+      <div class="term">
+        <dt data-en="Carve sequence">カービング数列</dt>
+        <dd data-en="How many carves a step uses, and whether it enters from the heel side or the toe side, written out as digits.">1つのステップが何回のカービングを使い、ヒールとトゥのどちら側から入るかを並べた数字。</dd>
+      </div>
+      <div class="term">
+        <dt data-en="How speed is spent">スピードの考え方</dt>
+        <dd data-en="The speed available in one line is finite. Which steps get the wide carves and which are kept narrow — that split is what decides how the line reads.">1ラインで使えるスピードは有限です。どのステップに広いカービングを配り、どこを細く済ませるか。配分が決まるとラインの印象が決まります。</dd>
+      </div>
+    </dl>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow eb-toe">Pricing</p>
+      <h2 data-en="Pricing">料金</h2>
+    </div>
+    <div class="plans">
+      <div class="plan">
+        <span class="pname" data-en="Monthly">月額</span>
+        <span class="pprice">¥500<small data-en=" / mo"> / 月</small></span>
+        <span class="pnote" data-en="Auto-renewing. For trying it out over a month.">自動更新。まず1か月だけ試す使い方に。</span>
+      </div>
+      <div class="plan lead">
+        <span class="tag" data-en="2 months free">2か月ぶん無料</span>
+        <span class="pname" data-en="Annual">年額</span>
+        <span class="pprice">¥5,000<small data-en=" / yr"> / 年</small></span>
+        <span class="pnote" data-en="Auto-renewing. ¥1,000 less than twelve monthly payments (¥6,000).">自動更新。月額12か月（¥6,000）より¥1,000安くなります。</span>
+      </div>
+      <div class="plan">
+        <span class="pname" data-en="One-time">買い切り</span>
+        <span class="pprice">¥10,000</span>
+        <span class="pnote" data-en="One payment, yours for good.">1回の支払いで永久。</span>
+      </div>
+    </div>
+    <div class="gate">
+      <div>
+        <h3 data-en="Free">無料でできること</h3>
+        <ul>
+          <li data-en="Detect the carving path from a clip">動画からカービングの軌道を検出する</li>
+          <li data-en="Assign steps to carves on the diagram">俯瞰図の上でカーブにステップを当てはめる</li>
+        </ul>
+      </div>
+      <div>
+        <h3 data-en="Paid">有料でできること</h3>
+        <ul>
+          <li data-en="Saving and replaying a line">ラインの保存と再生</li>
+          <li data-en="Trick match against a reference">トリック照合（お手本との比較）</li>
+          <li data-en="Auto-generate and ride check">おまかせ生成・滑走チェック</li>
+          <li data-en="Step video previews and your own steps">ステップ動画のプレビュー・自分のステップ登録</li>
+          <li data-en="Exporting footage with the line overlaid">動画にラインを重ねて書き出す</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <div class="sec-head">
+      <p class="eyebrow eb-heel">Questions</p>
+      <h2 data-en="Questions">よくある質問</h2>
+    </div>
+    <div class="faq">
+      <details>
+        <summary data-en="What kind of clip works best?">どんな動画を入れればいいですか</summary>
+        <p data-en="One where the whole skater is in frame and several carves run in a row. Ten seconds is plenty. Once it loads, tap the skater to set where tracking starts.">スケーターの全身が入っていてカービングが数回続いている動画が向いています。10秒前後で十分です。読み込んだあと最初にスケーターをタップして、追跡の起点を指定します。</p>
+      </details>
+      <details>
+        <summary data-en="Can I add my own steps?">自分のステップを登録できますか</summary>
+        <p data-en="Yes. Enter a step name, its carve sequence and a difficulty, and it shows up among the candidates. Register a clip with it and you can check the step while choosing.">できます。ステップ名とカービング数列、難易度を入れると、ライン設計の候補に出てきます。動画を一緒に登録しておくと、選ぶときにその場で確認できます。</p>
+      </details>
+    </div>
+  </section>
+
+  <section>
+    <div class="bio">
+      <p class="eyebrow eb-toe">Who made this</p>
+      <div class="bio-name">
+        <h2 data-en="Ryo Ogasawara">小笠原 亮</h2>
+        <img src="steam-logo.png" alt="S-TEAM" width="640" height="183">
+      </div>
+      <p data-en="A video director in Tokyo who rides and teaches longboard dancing. Member of the Chinese dancing team S-TEAM.">映像ディレクターとして働きながら、東京でロングボードを教えています。中国のダンシングチームS-TEAM所属。</p>
+      <p data-en="What makes longboarding deep is how you build your own line. Finding one that looks like you, out of a near-infinite set of combinations, takes a great deal of time and effort. The team I ride with follows one principle: dancing is carving. I built this app so that each rider can hold to that principle and still build a line that is theirs alone.">ロングボードで特に奥深いのは「どうやって自分のラインを組むか」です。無限に近い組み合わせの中から、自分らしさを表現できるラインを​見つけるのには、とても時間と労力がかかります。私の所属するチームでは「ダンシングはカービングである」という原則に従って滑ります。その原則に基づきながら、ユーザー一人一人が自分だけのラインを組むためにこのアプリを開発しました。</p>
+    </div>
+  </section>
+
+  <div class="closing">
+    <h2 data-en="Build a line">ラインを組んでみる</h2>
+    <a class="cta" href="https://apps.apple.com/us/app/stem-line-builder-longboard/id6793957353" data-en="View on the App Store">App Store で見る</a>
+  </div>
+
+  <footer>
+    <span>STEM Line Builder</span>
+    <span data-en="iOS · Japanese / English / 简体中文">iOS 対応・日本語 / English / 简体中文</span>
+    <a href="https://ryoogasawara981.github.io/longboard-lesson/" data-en="About the lessons">レッスンについて</a>
+  </footer>
+
+</div>
+
+</div>
+
+<script>
+/* 日本語表示のときだけ、本文を読点・句点のかたまりごとに inline-block で包み、
+   改行が文の途中ではなく句読点の位置で起きるようにする。
+   そのうえで、行末に来てしまった「、」はその行だけ削る（行末の読点を残さない）。
+   word-break:auto-phrase は Chromium 限定なので、どのブラウザでも効くこの方法を使う。 */
+(function () {
+  var PHRASE = '.hero p, .sec-head p, .feature > p, .fine, .term dd, .gate li, .faq p, .bio p, .flow li span + span, .plan .pnote';
+
+  var nodes = Array.prototype.slice.call(document.querySelectorAll('[data-en]'));
+  nodes.forEach(function (el) { el.setAttribute('data-ja', el.textContent); });
+  var phrased = [];
+
+  function phrase(el) {
+    var parts = el.textContent.replace(/​/g, '\u0000').replace(/([、。])/g, '$1\u0000').split('\u0000').filter(Boolean);
+    if (parts.length < 2) return;
+    el.textContent = '';
+    parts.forEach(function (t) {
+      var sp = document.createElement('span');
+      sp.style.display = 'inline-block';
+      sp.setAttribute('data-t', t);
+      sp.textContent = t;
+      el.appendChild(sp);
+    });
+    phrased.push(el);
+  }
+
+  /* 行末になった span の「、」を落とす。削ると折り返しが動くので2周だけ回す。 */
+  function trim(el) {
+    var sp = el.children, i;
+    for (i = 0; i < sp.length; i++) sp[i].textContent = sp[i].getAttribute('data-t');
+    for (var pass = 0; pass < 2; pass++) {
+      var changed = false;
+      for (i = 0; i < sp.length - 1; i++) {
+        var raw = sp[i].getAttribute('data-t');
+        var breaksHere = sp[i + 1].offsetTop > sp[i].offsetTop + 1;
+        var want = (breaksHere && raw.charAt(raw.length - 1) === '、') ? raw.slice(0, -1) : raw;
+        if (sp[i].textContent !== want) { sp[i].textContent = want; changed = true; }
+      }
+      if (!changed) break;
+    }
+  }
+  function trimAll() { try { phrased.forEach(trim); } catch (e) {} }
+
+  function apply(lang) {
+    phrased = [];
+    nodes.forEach(function (el) {
+      el.textContent = lang === 'en' ? el.getAttribute('data-en') : el.getAttribute('data-ja');
+    });
+    if (lang !== 'en') {
+      document.querySelectorAll(PHRASE).forEach(function (el) {
+        if (el.children.length) return;
+        phrase(el);
+      });
+      requestAnimationFrame(trimAll);
+    }
+    document.querySelectorAll('video[data-src-ja]').forEach(function (v) {
+      var src = v.getAttribute(lang === 'en' ? 'data-src-en' : 'data-src-ja');
+      if (!src || v.getAttribute('src') === src) return;
+      v.setAttribute('poster', v.getAttribute(lang === 'en' ? 'data-poster-en' : 'data-poster-ja'));
+      v.setAttribute('src', src);
+      v.load();
+      var pr = v.play();
+      if (pr && pr.catch) pr.catch(function () {});
+    });
+    document.documentElement.lang = lang === 'en' ? 'en' : 'ja';
+    var ja = document.getElementById('langJa'), en = document.getElementById('langEn');
+    ja.setAttribute('aria-pressed', String(lang !== 'en'));
+    en.setAttribute('aria-pressed', String(lang === 'en'));
+    try { localStorage.setItem('stem-lp-lang', lang); } catch (e) {}
+  }
+
+  var saved = 'ja';
+  try { saved = localStorage.getItem('stem-lp-lang') || 'ja'; } catch (e) {}
+  apply(saved);
+  document.getElementById('langJa').addEventListener('click', function () { apply('ja'); });
+  document.getElementById('langEn').addEventListener('click', function () { apply('en'); });
+
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(trimAll);
+  var t = null;
+  addEventListener('resize', function () { clearTimeout(t); t = setTimeout(trimAll, 150); });
+})();
+</script>
+
+</body>
+</html>
